@@ -1,14 +1,14 @@
-resource "aws_eks_cluster" "this" {
-  name            = "${var.cluster-name}"
-  role_arn        = "${aws_iam_role.cluster.arn}"
+module "master" {
+  source = "modules/master"
+  cluster-name = "dshmelev-eks"
+}
 
-  vpc_config {
-    security_group_ids = ["${aws_security_group.cluster.id}"]
-    subnet_ids         = ["${aws_subnet.this.*.id}"]
-  }
-
-  depends_on = [
-    "aws_iam_role_policy_attachment.cluster-AmazonEKSClusterPolicy",
-    "aws_iam_role_policy_attachment.cluster-AmazonEKSServicePolicy",
-  ]
+module "worker" {
+  source = "modules/worker"
+  cluster-name = "${module.master.cluster_name}"
+  aws_security_group_cluster_id = "${module.master.aws_security_group_cluster_id}"
+  vpc_id = "${module.master.vpc_id}"
+  aws_eks_cluster_endpoint = "${module.master.aws_eks_cluster_endpoint}"
+  aws_subnets = "${module.master.aws_subnets}"
+  aws_eks_cluster_certificate_authority = "${module.master.aws_eks_cluster_certificate_authority}"
 }
